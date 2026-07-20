@@ -1,0 +1,5 @@
+cohere
+requests
+beautifulsoup4
+python-dotenv
+gradio
