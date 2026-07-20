@@ -9,6 +9,10 @@ from llama_index.core.tools import QueryEngineTool, FunctionTool
 from llama_index.core.agent import ReActAgent
 import logging
 from pathlib import Path
+from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
+from llama_index.core.agent.workflow import ReActAgent
+from llama_index.core import load_index_from_storage
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -19,9 +23,11 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 # Initialize Gemini LLM and embeddings
-llm = Gemini(model_name="models/gemini-1.5-flash", api_key=GOOGLE_API_KEY)
-embed_model = GeminiEmbedding(model_name="models/embedding-001", api_key=GOOGLE_API_KEY)
-
+llm = Gemini(model_name="models/gemini-2.5-flash", api_key=GOOGLE_API_KEY)
+embed_model = GoogleGenAIEmbedding(
+    model_name="models/gemini-embedding-001", 
+    api_key=GOOGLE_API_KEY
+)
 # Define index storage path
 INDEX_STORAGE_DIR = "index_storage"
 
@@ -48,7 +54,9 @@ index_storage_path = Path(INDEX_STORAGE_DIR)
 if index_storage_path.exists():
     logger.info("Loading existing index from disk...")
     storage_context = StorageContext.from_defaults(persist_dir=INDEX_STORAGE_DIR)
-    index = VectorStoreIndex.load_from_disk(storage_context, embed_model=embed_model)
+    #index = VectorStoreIndex.load_from_disk(storage_context,embed_model=embed_model)
+    index = load_index_from_storage(storage_context,embed_model=embed_model)
+    
 else:
     logger.info("Indexing sales data...")
     # Read sales data from CSV
@@ -84,8 +92,14 @@ sales_tool = QueryEngineTool.from_defaults(
 )
 
 # Create ReAct agent with multiple tools
-agent = ReActAgent.from_tools([sales_tool, analytics_tool], llm=llm, verbose=True)
-
+#agent = ReActAgent.from_tools([sales_tool, analytics_tool], llm=llm, verbose=True)
+agent = ReActAgent(
+    name="sales_analysis_agent",
+    description="Analyses sales data and performs sales calculations.",
+    tools=[sales_tool, analytics_tool],
+    llm=llm,
+    verbose=True
+)
 # Function to query sales data using the agent
 def analyze_sales(query, query_history):
     response = agent.chat(query)
