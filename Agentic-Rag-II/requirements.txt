@@ -1,0 +1,6 @@
+openai>=2.0,<3
+ddgs>=9.9
+requests>=2.32
+beautifulsoup4>=4.12
+python-dotenv>=1.0.1
+streamlit>=1.49
